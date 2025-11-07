@@ -203,7 +203,6 @@ sequenceDiagram
 ## Cross-Library Observations (for Ratatat)
 - **Ergonomics gap**: Textual/Rich offer declarative Compose + CSS + data binding; Ratatui offers low-level primitives. Ratatat can wrap Ratatui to mimic Textual APIs.
 - **Rendering pipeline**: Rich segments ↔ Ratatui buffers both express styled cells. Mapping Ruby-side DOM to Ratatui buffers requires consistent style abstractions.
-- **Concurrency**: Textual leans on asyncio/workers; Toolong shows mixing threads + async. Ruby equivalent (Fibers/Ractors) must coordinate with Rust event sources.
+- **Concurrency**: Textual leans on asyncio/workers; Toolong shows mixing threads + async. Ruby equivalents (Fibers/Ractors, `async`/`async-io`, `polyphony`, etc.) must coordinate with Rust event sources.
 - **Streaming logs**: Toolong’s watcher/message architecture is a template for log-heavy apps we expect Ratatat users to build; watchers could be Rust services emitting events to Ruby DSL.
 - **Backends**: Ratatui already supports multiple terminal libraries. If Ratatat wraps it, we inherit portable cursor/mouse handling "for free" while focusing on developer experience.
-
