@@ -293,3 +293,72 @@ Each edge highlights the heaviest intra-package relationships—for example, `wi
 3. **Finish with surface areas**: tackle `css`, `app`, `screen`, and finally `widgets`, using the dependency table to know which helpers to inspect next when you encounter unfamiliar imports.
 
 Because the analyzer groups by the first path segment, we can easily rerun it with deeper granularity (e.g., just `widgets.data_table`) when we need to zoom in. This provides a repeatable way to perform bottom-up research passes before translating Textual concepts into Ratatat’s Ruby-facing design.
+
+## Ratatui Module Dependency Map
+
+I ran the same import analysis across the Rust workspace in `../ratatui`, scanning every `.rs` file for `use crate::…` / `use ratatui_*::…` statements. Each file is grouped by the first path segment after `src/` (for example, `ratatui-core/src/widgets/widget.rs` → `widgets`), and each `use` contributes an edge to the first identifier after the crate namespace (`use crate::layout::Rect` → `layout`). This yields **71 module groups** across the workspace.
+
+### Hubs by outgoing dependencies
+
+| module group | distinct targets | Interpretation |
+| --- | --- | --- |
+| `lib` | 35 | The top-level `ratatui` crate re-exports almost everything, so it fans out across the stack. |
+| `widgets` | 23 | Widget implementations lean on layout, buffer, style, text, etc. |
+| `main` | 18 | Example binaries/demos exercise many modules—handy exemplars when tracing usage patterns. |
+| `init` | 14 | Initialization helpers span backends, terminals, and runtime ergonomics. |
+| `ratatui-widgets` | 13 | The dedicated widgets crate bridges into layout/style primitives frequently. |
+
+### Hubs by incoming dependencies
+
+| module group | distinct sources | Why it matters |
+| --- | --- | --- |
+| `layout` | 34 | `Rect`, `Constraint`, and layout splits underpin nearly every widget. |
+| `buffer` | 32 | Double-buffer diffing plus cell math are reused everywhere. |
+| `widgets` | 31 | Numerous modules pull in shared widget traits/helpers. |
+| `style` | 30 | Styling APIs are ubiquitous—worth understanding early. |
+| `text` | 29 | Spans/Lines are core to rendering; mastering them unlocks most widget code. |
+
+### Core dependency diagram
+
+Focusing on the highest-degree nodes (union of the top outgoing/incoming groups) produces the following Mermaid graph—edge labels show how many files import that dependency:
+
+```mermaid
+graph LR
+    text -- "52" --> style
+    main -- "29" --> layout
+    main -- "29" --> style
+    main -- "28" --> widgets
+    main -- "24" --> text
+    main -- "23" --> run
+    barchart -- "23" --> widgets
+    block -- "22" --> widgets
+    widgets -- "18" --> layout
+    ratatui-widgets -- "17" --> layout
+    barchart -- "17" --> style
+    ratatui-widgets -- "16" --> style
+    ratatui-widgets -- "16" --> widgets
+    chart -- "16" --> widgets
+    ratatui-widgets -- "15" --> run
+    canvas -- "15" --> symbols
+    lib -- "14" --> backend
+    ratatui-widgets -- "14" --> text
+    widgets -- "13" --> buffer
+    widgets -- "12" --> text
+    main -- "12" --> buffer
+    canvas -- "12" --> style
+    canvas -- "12" --> widgets
+    text -- "11" --> layout
+    buffer -- "11" --> layout
+    ratatui-widgets -- "11" --> Frame
+```
+
+This makes a few relationships obvious: demo `main` targets touch nearly every public surface; `ratatui-widgets` bridges from widgets into low-level primitives (`layout`, `style`, `text`, `Frame`); and specialized widgets (e.g., `barchart`, `block`, `canvas`) still lean on shared building blocks.
+
+### Using the map
+
+1. **Start with data primitives**: read `layout`, `buffer`, `style`, `text`, and `symbols` before diving elsewhere—they are the most reused modules.
+2. **Understand rendering glue**: study `backend`, `Terminal`, `Frame`, `init`, and `run` helpers to see how buffers flush to the terminal and how setup/teardown is automated.
+3. **Dive into widgets**: once primitives are clear, inspect `widgets` plus concrete implementations (`block`, `barchart`, `canvas`, `chart`, `gauge`, etc.) to see how they compose the primitives.
+4. **Use demos/lib entry points**: the `main` and `lib` groups illustrate real-world API consumption—follow their imports when you need usage references.
+
+Like the Textual analyzer, we can rerun the script with deeper segmentation (e.g., targeting just `widgets/list`) when we need to drill into a specific subsystem.
