@@ -324,32 +324,32 @@ Focusing on the highest-degree nodes (union of the top outgoing/incoming groups)
 
 ```mermaid
 graph LR
-    text -- "52" --> style
-    main -- "29" --> layout
-    main -- "29" --> style
-    main -- "28" --> widgets
-    main -- "24" --> text
-    main -- "23" --> run
-    barchart -- "23" --> widgets
-    block -- "22" --> widgets
-    widgets -- "18" --> layout
-    ratatui-widgets -- "17" --> layout
-    barchart -- "17" --> style
-    ratatui-widgets -- "16" --> style
-    ratatui-widgets -- "16" --> widgets
-    chart -- "16" --> widgets
-    ratatui-widgets -- "15" --> run
-    canvas -- "15" --> symbols
-    lib -- "14" --> backend
-    ratatui-widgets -- "14" --> text
-    widgets -- "13" --> buffer
-    widgets -- "12" --> text
-    main -- "12" --> buffer
-    canvas -- "12" --> style
-    canvas -- "12" --> widgets
-    text -- "11" --> layout
-    buffer -- "11" --> layout
-    ratatui-widgets -- "11" --> Frame
+    text -- 52 --> style
+    main -- 29 --> layout
+    main -- 29 --> style
+    main -- 28 --> widgets
+    main -- 24 --> text
+    main -- 23 --> run
+    barchart -- 23 --> widgets
+    block -- 22 --> widgets
+    widgets -- 18 --> layout
+    ratatui-widgets -- 17 --> layout
+    barchart -- 17 --> style
+    ratatui-widgets -- 16 --> style
+    ratatui-widgets -- 16 --> widgets
+    chart -- 16 --> widgets
+    ratatui-widgets -- 15 --> run
+    canvas -- 15 --> symbols
+    lib -- 14 --> backend
+    ratatui-widgets -- 14 --> text
+    widgets -- 13 --> buffer
+    widgets -- 12 --> text
+    main -- 12 --> buffer
+    canvas -- 12 --> style
+    canvas -- 12 --> widgets
+    text -- 11 --> layout
+    buffer -- 11 --> layout
+    ratatui-widgets -- 11 --> Frame
 ```
 
 This makes a few relationships obvious: demo `main` targets touch nearly every public surface; `ratatui-widgets` bridges from widgets into low-level primitives (`layout`, `style`, `text`, `Frame`); and specialized widgets (e.g., `barchart`, `block`, `canvas`) still lean on shared building blocks.
