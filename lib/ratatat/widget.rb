@@ -9,6 +9,7 @@ module Ratatat
   # Base class for all widgets in the UI tree.
   class Widget
     extend T::Sig
+    extend Reactive
 
     CAN_FOCUS = false
 
@@ -24,13 +25,43 @@ module Ratatat
     sig { returns(T::Array[Widget]) }
     attr_reader :children
 
-    sig { params(id: T.nilable(String), classes: T::Array[String]).void }
-    def initialize(id: nil, classes: [])
+    sig { params(id: T.nilable(String), classes: T::Array[String], kwargs: T.untyped).void }
+    def initialize(id: nil, classes: [], **kwargs)
       @id = id
       @classes = T.let(classes.to_set, T::Set[String])
       @parent = T.let(nil, T.nilable(Widget))
       @children = T.let([], T::Array[Widget])
       @has_focus = T.let(false, T::Boolean)
+
+      # Initialize reactive properties from kwargs
+      kwargs.each do |key, value|
+        setter = :"#{key}="
+        send(setter, value) if respond_to?(setter)
+      end
+    end
+
+    # Trigger repaint (override in subclass or App)
+    sig { void }
+    def refresh
+      # Default: no-op, App overrides to trigger render
+    end
+
+    # Override to define children declaratively
+    sig { returns(T::Array[Widget]) }
+    def compose
+      []
+    end
+
+    # Rebuild children from compose
+    sig { void }
+    def recompose
+      # Remove existing children
+      @children.each { |c| c.instance_variable_set(:@parent, nil) }
+      @children.clear
+
+      # Reset compose flag and re-compose
+      @_composed = nil
+      do_compose
     end
 
     # Add children to this widget
@@ -212,9 +243,34 @@ module Ratatat
     def trigger_mount(widget)
       # Only trigger if we're connected to an App
       return unless widget.app
+      # Skip if already mounted
+      return if widget.instance_variable_get(:@_mounted)
+
+      widget.instance_variable_set(:@_mounted, true)
+
+      # Compose children first (only if not already composed)
+      widget.send(:do_compose) unless widget.instance_variable_get(:@_composed)
 
       widget.on_mount if widget.respond_to?(:on_mount)
+
+      # Also trigger mount for any pre-existing children (mounted before joining app)
       widget.children.each { |child| trigger_mount(child) }
+    end
+
+    # Internal: run compose and mount results
+    sig { void }
+    def do_compose
+      return if @_composed
+
+      @_composed = T.let(true, T.nilable(T::Boolean))
+      children = compose
+      return if children.empty?
+
+      children.each do |child|
+        child.instance_variable_set(:@parent, self)
+        @children << child
+        trigger_mount(child) if app
+      end
     end
 
     sig { params(widget: Widget).void }

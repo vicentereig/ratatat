@@ -791,8 +791,8 @@ Recommended order based on dependencies:
 | 2. Widget Tree | Done | 2025-11-27 | 2025-11-27 |
 | 3. Lifecycle | Done | 2025-11-27 | 2025-11-27 |
 | 4. Key Bindings | Done | 2025-11-27 | 2025-11-27 |
-| 5. Reactive | Not Started | | |
-| 6. Composition | Not Started | | |
+| 5. Reactive | Done | 2025-11-27 | 2025-11-27 |
+| 6. Composition | Done | 2025-11-27 | 2025-11-27 |
 | 7. Styling | Not Started | | |
 | 8. Widget Library | Not Started | | |
 | 9. Async | Not Started | | |
