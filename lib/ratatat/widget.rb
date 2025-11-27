@@ -111,6 +111,12 @@ module Ratatat
     # Dispatch a message to this widget and bubble up
     sig { params(message: Message).void }
     def dispatch(message)
+      # Check key bindings first
+      if message.is_a?(Key) && handle_binding(message)
+        message.stop
+        return
+      end
+
       handler = handler_for(message)
       send(handler, message) if handler && respond_to?(handler)
 
@@ -169,6 +175,36 @@ module Ratatat
         widget.is_a?(selector)
       else
         false
+      end
+    end
+
+    # Check if this widget has BINDINGS and handle the key
+    sig { params(message: Key).returns(T::Boolean) }
+    def handle_binding(message)
+      bindings.each do |binding|
+        if binding.matches?(message.key, message.modifiers)
+          action_method = :"action_#{binding.action}"
+          if respond_to?(action_method)
+            send(action_method)
+            return true
+          end
+        end
+      end
+      false
+    end
+
+    # Get bindings for this widget class
+    sig { returns(T::Array[Binding]) }
+    def bindings
+      return [] unless self.class.const_defined?(:BINDINGS, false)
+
+      raw = self.class.const_get(:BINDINGS, false)
+      raw.map do |b|
+        case b
+        when Binding then b
+        when Array then Binding.new(b[0], b[1], b[2] || "")
+        else b
+        end
       end
     end
 

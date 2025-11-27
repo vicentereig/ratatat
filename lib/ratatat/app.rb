@@ -8,6 +8,11 @@ module Ratatat
   class App < Widget
     extend T::Sig
 
+    BINDINGS = T.let([
+      Binding.new("tab", "focus_next", "Focus next", show: false),
+      Binding.new("shift_tab", "focus_previous", "Focus previous", show: false),
+    ], T::Array[Binding])
+
     sig { returns(T.nilable(Terminal)) }
     attr_reader :terminal
 
@@ -77,6 +82,7 @@ module Ratatat
         set_focus(widgets[next_idx])
       end
     end
+    alias action_focus_next focus_next
 
     # Move focus to previous focusable widget
     sig { void }
@@ -92,6 +98,7 @@ module Ratatat
         set_focus(widgets[prev_idx])
       end
     end
+    alias action_focus_previous focus_previous
 
     # Main event loop
     sig { params(poll_interval: Float).void }
