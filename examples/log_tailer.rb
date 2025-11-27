@@ -74,12 +74,19 @@ end
 
 view = LogTailerView.new(buffer)
 
+# Use the pure Ruby Native driver (recommended - no FFI required)
+# Falls back to FFI driver if explicitly requested via RATATAT_USE_FFI=1
 driver =
-  begin
-    Ratatat::Driver::Ffi.new
-  rescue StandardError
-    warn "Using Null driver; build native shim with `cargo build -p ratatat-ffi --release` for TUI output."
-    Ratatat::Driver::Null.new
+  if ENV["RATATAT_USE_FFI"]
+    begin
+      Ratatat::Driver::Ffi.new
+    rescue StandardError => e
+      warn "FFI driver requested but failed: #{e.message}"
+      warn "Using Native driver instead."
+      Ratatat::Driver::Native.new
+    end
+  else
+    Ratatat::Driver::Native.new
   end
 
 app = Ratatat::App.new(driver: driver, root: view, rows: 24, cols: 80)

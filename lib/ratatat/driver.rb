@@ -3,7 +3,74 @@ module Ratatat
     begin
       require "ffi"
     rescue LoadError
-      # FFI gem not available; we'll rely on the Null driver only.
+      # FFI gem not available; we'll rely on Native or Null driver.
+    end
+
+    # Pure Ruby driver with cell-based diffing for flicker-free rendering.
+    # This is the recommended driver - no FFI dependencies required.
+    class Native
+      def initialize(io: $stdout, input_io: $stdin)
+        @terminal = Terminal.new(io: io)
+        @input = Input.new(io: input_io)
+        @render_callback = nil
+      end
+
+      def open
+        @terminal.enter
+      end
+
+      def close
+        @terminal.exit
+      end
+
+      # Render lines to terminal using cell-based diffing
+      # Accepts either:
+      # - Array of strings (legacy API)
+      # - Block that draws to buffer (new API)
+      def render(lines = nil, &block)
+        if block_given?
+          @terminal.draw(&block)
+        elsif lines
+          # Legacy API: convert string lines to buffer
+          @terminal.draw do |buffer|
+            lines.each_with_index do |line, y|
+              buffer.put_string(0, y, line)
+            end
+          end
+        end
+      end
+
+      # Poll for keyboard event with timeout (milliseconds)
+      # Returns symbol (:quit, :up, :down, etc.) for compatibility
+      # or KeyEvent for new API
+      def poll_event(timeout_ms = 50)
+        event = @input.poll(timeout_ms / 1000.0)
+        return nil unless event
+
+        # Legacy API compatibility: convert to symbols
+        case event.key
+        when :up then :up
+        when :down then :down
+        when :left then :left
+        when :right then :right
+        when :escape, :q then :quit
+        when :c
+          event.ctrl? ? :quit : nil
+        when :f then :toggle_follow
+        else
+          # Return the KeyEvent for new code
+          event
+        end
+      end
+
+      # Get terminal size as [rows, cols]
+      def size
+        width, height = @terminal.size
+        [height, width]  # Return as [rows, cols] for compatibility
+      end
+
+      # Access to underlying components for advanced usage
+      attr_reader :terminal, :input
     end
 
     # A fallback driver that dumps frames to STDOUT; used for specs and when the native
