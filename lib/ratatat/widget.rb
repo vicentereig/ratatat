@@ -177,8 +177,20 @@ module Ratatat
 
     sig { params(message: Message).returns(T.nilable(Symbol)) }
     def handler_for(message)
-      # Key -> :on_key, Resize -> :on_resize
-      name = message.class.name&.split("::")&.last&.downcase
+      # Key -> :on_key, Button::Pressed -> :on_button_pressed
+      parts = message.class.name&.split("::")
+      return nil unless parts
+
+      # Remove "Ratatat" prefix if present
+      parts.shift if parts.first == "Ratatat"
+
+      # If nested (e.g., Button::Pressed), use widget_message format
+      name = if parts.length >= 2
+               "#{parts[-2]}_#{parts[-1]}".downcase
+             else
+               parts.last&.downcase
+             end
+
       return nil unless name
       :"on_#{name}"
     end

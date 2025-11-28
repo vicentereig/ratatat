@@ -20,5 +20,11 @@ require_relative "ratatat/widget"
 # Application framework
 require_relative "ratatat/app"
 
+# Widgets
+require_relative "ratatat/widgets/static"
+require_relative "ratatat/widgets/button"
+require_relative "ratatat/widgets/text_input"
+require_relative "ratatat/widgets/container"
+
 module Ratatat
 end
