@@ -17,6 +17,7 @@ require_relative "ratatat/binding"
 require_relative "ratatat/reactive"
 require_relative "ratatat/styles"
 require_relative "ratatat/css_parser"
+require_relative "ratatat/dom_query"
 require_relative "ratatat/widget"
 
 # Application framework
@@ -33,6 +34,18 @@ require_relative "ratatat/widgets/data_table"
 require_relative "ratatat/widgets/tree"
 require_relative "ratatat/widgets/progress_bar"
 require_relative "ratatat/widgets/modal"
+require_relative "ratatat/widgets/text_area"
+require_relative "ratatat/widgets/radio_set"
+require_relative "ratatat/widgets/sparkline"
+require_relative "ratatat/widgets/log"
+require_relative "ratatat/widgets/grid"
+require_relative "ratatat/widgets/scrollable_container"
+require_relative "ratatat/widgets/tabbed_content"
+require_relative "ratatat/widgets/toast"
+require_relative "ratatat/widgets/tooltip"
+require_relative "ratatat/widgets/spinner"
+require_relative "ratatat/widgets/horizontal"
+require_relative "ratatat/widgets/vertical"
 
 module Ratatat
 end

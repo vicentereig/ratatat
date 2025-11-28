@@ -37,6 +37,7 @@ module Ratatat
       @workers = T.let({}, T::Hash[Symbol, Thread])
       @worker_results = T.let([], T::Array[Worker::Done])
       @worker_mutex = T.let(Mutex.new, Mutex)
+      @post_refresh_callbacks = T.let([], T::Array[T.proc.void])
     end
 
     private
@@ -155,6 +156,12 @@ module Ratatat
       @deferred << block
     end
 
+    # Schedule callback for after next render
+    sig { params(block: T.proc.void).void }
+    def call_after_refresh(&block)
+      @post_refresh_callbacks << block
+    end
+
     # Process timers and deferred callbacks
     sig { void }
     def process_timers
@@ -229,18 +236,30 @@ module Ratatat
       @input = Input.new
       @running = true
 
+      # Handle Ctrl+C gracefully
+      old_sigint = trap("INT") { @running = false }
+
       @terminal.enter
       begin
+        # Initialize widget tree
+        send(:do_compose)
+        @children.each { |child| send(:trigger_mount, child) }
+
+        # Call on_mount for the app itself
+        on_mount if respond_to?(:on_mount)
+
         while @running
           poll_input
           process_messages
           process_timers
           process_workers
           render_frame
+          process_post_refresh
           sleep(poll_interval)
         end
       ensure
         @terminal.exit
+        trap("INT", old_sigint || "DEFAULT")
       end
     end
 
@@ -270,10 +289,21 @@ module Ratatat
       end
     end
 
+    sig { void }
+    def process_post_refresh
+      pending = @post_refresh_callbacks.dup
+      @post_refresh_callbacks.clear
+      pending.each(&:call)
+    end
+
     # Override in subclass to render content
     sig { params(buffer: Buffer).void }
     def render(buffer)
-      @children.each { |child| child.render(buffer) if child.respond_to?(:render) }
+      width = @terminal&.width || 80
+      height = @terminal&.height || 24
+      @children.each do |child|
+        child.render(buffer, x: 0, y: 0, width: width, height: height) if child.respond_to?(:render)
+      end
     end
 
     sig { params(message: Message).void }

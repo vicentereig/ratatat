@@ -793,67 +793,103 @@ Recommended order based on dependencies:
 | 4. Key Bindings | Done | 2025-11-27 | 2025-11-27 |
 | 5. Reactive | Done | 2025-11-27 | 2025-11-27 |
 | 6. Composition | Done | 2025-11-27 | 2025-11-27 |
-| 7. Styling | Done (CSS parser, pseudo-classes) | 2025-11-28 | 2025-11-28 |
-| 8. Widget Library | Done (full) | 2025-11-28 | 2025-11-28 |
-| 9. Async | Done (timers + workers) | 2025-11-28 | 2025-11-28 |
-| 10. Queries | Done | 2025-11-27 | 2025-11-27 |
+| 7. Styling | Done | 2025-11-28 | 2025-11-28 |
+| 8. Widget Library | Done | 2025-11-28 | 2025-11-28 |
+| 9. Async | Done | 2025-11-28 | 2025-11-28 |
+| 10. Queries | Done | 2025-11-28 | 2025-11-28 |
 
-### Implemented Features (275 tests)
+**All phases complete!** 419 tests passing.
+
+---
+
+## Performance Benchmarks
+
+Benchmarks run on pure Ruby implementation (no FFI). See `spec/benchmarks/performance_spec.rb`.
+
+### Rendering Performance
+
+| Metric | Target | Actual | Status |
+|--------|--------|--------|--------|
+| Frame rate (80x24) | 60 fps | **1684 fps** | ✅ 28x target |
+| Frame time | <16.7ms | **0.6ms** | ✅ |
+| Many widgets (20 in grid) | - | **0.9ms/frame** | ✅ |
+
+### Buffer Diffing Performance
+
+| Buffer Size | Cells | Target | Actual | Status |
+|-------------|-------|--------|--------|--------|
+| Standard (80x24) | 1,920 | <1ms | **0.6ms** | ✅ |
+| Large (180x48) | 8,640 | <5ms | **2.6ms** | ✅ |
+| Minimal change | 1,920 | - | **0.9ms** | ✅ |
+
+At 0.6ms diff + 0.6ms render = 1.2ms total, we can achieve **833 fps** - 14x the 60fps requirement.
+
+### Other Metrics
+
+| Operation | Time | Notes |
+|-----------|------|-------|
+| Widget creation (1000) | 5.4ms | 0.005ms per widget |
+| Query (500 widgets) | 0.57ms | DOMQuery with class selector |
+| Memory (80x24 buffer) | ~188KB | Reasonable for terminal app |
+
+### Optimization Notes
+
+Hot path optimizations in `Buffer#diff`:
+1. **While loop** instead of `each_with_index` - avoids block/iterator overhead
+2. **Manual x/y tracking** instead of `pos_of(i)` - avoids division/modulo per cell
+3. **Inlined `visually_equal?`** - avoids method call overhead
+4. **ASCII fast-path** - skips width calculation for ASCII chars (ord < 128)
+5. **Cached Cell#width** - memoized with `@_width ||= compute_width`
+
+These optimizations achieved **77% speedup** from 2.7ms to 0.6ms for 80x24 buffers.
+
+---
+
+## Implemented Features (419 tests)
 
 **Core Framework:**
 - Message system with bubbling (Key, Resize, Quit, Focus, Blur, Worker::Done)
-- Widget tree (mount, remove, ancestors, query)
+- Widget tree (mount, remove, ancestors, query, DOMQuery)
 - Focus system (can_focus?, focus, blur, Tab/Shift+Tab navigation)
 - Lifecycle hooks (on_mount, on_unmount, on_focus, on_blur)
 - Key bindings (BINDINGS constant → action_* methods)
 - Reactive properties (`reactive :name, default:, repaint:`)
 - Composition (`compose` returns children, `recompose`)
-- Async (set_timer, set_interval, cancel_timer, call_later)
+- Async (set_timer, set_interval, cancel_timer, call_later, call_after_refresh)
 - Background workers (run_worker, cancel_worker, Worker::Done)
 
 **Styling:**
 - Styles class with properties (foreground, background, width, height, padding, bold, etc.)
 - StyleSheet with rules and selectors (type, #id, .class)
 - Pseudo-classes (:focus, :disabled, :hover)
+- CSS combinators: descendant (`A B`), child (`A > B`)
+- Compound selectors (`Button.primary`, `.class1.class2`)
+- `:not()` selector
 - CSSParser.parse(css) and CSSParser.parse_file(path)
 - App CSS/CSS_PATH constants
 - Class management (add_class, remove_class, toggle_class, has_class?)
 
-**Widgets:**
-- Static, Button, TextInput (core)
-- Checkbox, Switch (toggles)
+**Widgets (27 total):**
+- Static, Button, TextInput, TextArea (text)
+- Checkbox, Switch, RadioSet (toggles)
 - Select, SelectionList (dropdowns)
 - DataTable (tabular data)
 - Tree, TreeNode (hierarchies)
-- ProgressBar, Spinner (progress)
-- Modal (dialogs)
-- Container, Horizontal, Vertical (layout)
-
-### Not Yet Implemented
-
-**Widgets:**
-- TextArea (multi-line input)
-- RadioSet (exclusive selection)
-- Sparkline (inline chart)
+- ProgressBar, Spinner (progress indicators)
+- Sparkline (inline charts)
 - Log (scrolling log viewer)
-- Grid (grid layout)
-- ScrollableContainer (scrollable viewport)
-- TabbedContent (tabbed panels)
-- Toast/Notification (temporary messages)
-- Tooltip (contextual help)
-
-**Styling:**
-- CSS combinators: descendant (`A B`), child (`A > B`)
-- `:not()` negation
+- Modal (dialogs)
+- Toast, Tooltip (overlays)
+- Container, Horizontal, Vertical, Grid (layout)
+- ScrollableContainer, TabbedContent (navigation)
 
 **Queries:**
-- Compound selectors (`Button.primary`)
-- DOMQuery object with filter/exclude
-- Bulk operations on query results
+- DOMQuery object with filter/exclude/first/last/each/count
+- Bulk operations: add_class, remove_class, toggle_class, refresh, remove, focus, set_styles
 
 **Other:**
 - Multi-width character support (emoji, CJK)
-- call_after_refresh(&block)
+- Example app: Log Tailer (`examples/log_tailer.rb`)
 
 ---
 

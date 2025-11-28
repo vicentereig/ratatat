@@ -70,17 +70,31 @@ module Ratatat
     EMPTY = T.let(new, Cell)
 
     # Display width of this cell (1 for most chars, 2 for CJK/emoji)
+    # Cached for performance
     sig { returns(Integer) }
     def width
+      @_width ||= compute_width
+    end
+
+    private
+
+    sig { returns(Integer) }
+    def compute_width
       return 1 if symbol.empty?
+
+      # Fast path for ASCII
+      ord = symbol.ord
+      return 1 if ord < 128
 
       # Use unicode-display_width if available
       if defined?(Unicode::DisplayWidth)
         Unicode::DisplayWidth.of(symbol)
       else
-        wide_char?(symbol.ord) ? 2 : 1
+        wide_char?(ord) ? 2 : 1
       end
     end
+
+    public
 
     # Normalize symbol for comparison (empty -> space)
     sig { returns(String) }

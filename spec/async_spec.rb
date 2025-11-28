@@ -122,4 +122,40 @@ RSpec.describe "Async" do
       expect(count).to eq(1)
     end
   end
+
+  describe "#call_after_refresh" do
+    it "executes callback after render" do
+      app = Ratatat::App.new
+      called = false
+
+      app.call_after_refresh { called = true }
+
+      expect(called).to be false
+      app.send(:process_post_refresh)
+      expect(called).to be true
+    end
+
+    it "executes in order" do
+      app = Ratatat::App.new
+      order = []
+
+      app.call_after_refresh { order << 1 }
+      app.call_after_refresh { order << 2 }
+      app.call_after_refresh { order << 3 }
+
+      app.send(:process_post_refresh)
+      expect(order).to eq([1, 2, 3])
+    end
+
+    it "only executes once" do
+      app = Ratatat::App.new
+      count = 0
+
+      app.call_after_refresh { count += 1 }
+
+      app.send(:process_post_refresh)
+      app.send(:process_post_refresh)
+      expect(count).to eq(1)
+    end
+  end
 end

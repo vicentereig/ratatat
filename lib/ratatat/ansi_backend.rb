@@ -26,8 +26,8 @@ module Ratatat
     sig { params(io: IO).void }
     def initialize(io: $stdout)
       @io = io
-      @current_fg = T.let(T.nilable(Color::AnyColor), T.nilable(Color::AnyColor))
-      @current_bg = T.let(T.nilable(Color::AnyColor), T.nilable(Color::AnyColor))
+      @current_fg = T.let(nil, T.nilable(Color::AnyColor))
+      @current_bg = T.let(nil, T.nilable(Color::AnyColor))
       @current_modifiers = T.let(Set.new, T::Set[Modifier])
     end
 

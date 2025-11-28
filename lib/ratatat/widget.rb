@@ -197,12 +197,12 @@ module Ratatat
       @parent&.dispatch(message)
     end
 
-    # Query descendants by selector
-    sig { params(selector: T.any(String, T::Class[Widget])).returns(T::Array[Widget]) }
+    # Query descendants by selector, returns chainable DOMQuery
+    sig { params(selector: T.any(String, T::Class[Widget])).returns(DOMQuery) }
     def query(selector)
-      results = []
+      results = T.let([], T::Array[Widget])
       walk_descendants { |w| results << w if matches?(w, selector) }
-      results
+      DOMQuery.new(results)
     end
 
     sig { params(selector: T.any(String, T::Class[Widget])).returns(T.nilable(Widget)) }
@@ -254,7 +254,8 @@ module Ratatat
         elsif selector.start_with?(".")
           widget.classes.include?(selector[1..])
         else
-          false
+          # Type selector - match class name
+          widget.class.name&.split("::")&.last == selector
         end
       when Class
         widget.is_a?(selector)

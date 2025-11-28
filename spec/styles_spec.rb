@@ -182,4 +182,134 @@ RSpec.describe Ratatat::StyleSheet do
       expect(styles.background).to eq(:blue)
     end
   end
+
+  describe "descendant combinator" do
+    it "matches widget inside ancestor" do
+      sheet = Ratatat::StyleSheet.new
+      sheet.add_rule("Container Button", foreground: :red)
+
+      container = Ratatat::Container.new
+      button = Ratatat::Button.new("Click")
+      container.mount(button)
+
+      styles = sheet.compute(button)
+      expect(styles.foreground).to eq(:red)
+    end
+
+    it "does not match widget without ancestor" do
+      sheet = Ratatat::StyleSheet.new
+      sheet.add_rule("Modal Button", foreground: :red)
+
+      container = Ratatat::Container.new
+      button = Ratatat::Button.new("Click")
+      container.mount(button)
+
+      styles = sheet.compute(button)
+      expect(styles.foreground).to be_nil
+    end
+
+    it "matches deeply nested widget" do
+      sheet = Ratatat::StyleSheet.new
+      sheet.add_rule("Container Button", foreground: :blue)
+
+      outer = Ratatat::Container.new
+      inner = Ratatat::Container.new
+      button = Ratatat::Button.new("Deep")
+      outer.mount(inner)
+      inner.mount(button)
+
+      styles = sheet.compute(button)
+      expect(styles.foreground).to eq(:blue)
+    end
+  end
+
+  describe "child combinator" do
+    it "matches direct child" do
+      sheet = Ratatat::StyleSheet.new
+      sheet.add_rule("Container > Button", foreground: :green)
+
+      container = Ratatat::Container.new
+      button = Ratatat::Button.new("Direct")
+      container.mount(button)
+
+      styles = sheet.compute(button)
+      expect(styles.foreground).to eq(:green)
+    end
+
+    it "does not match non-direct descendant" do
+      sheet = Ratatat::StyleSheet.new
+      sheet.add_rule("Modal > Button", foreground: :green)
+
+      modal = Ratatat::Modal.new
+      container = Ratatat::Container.new
+      button = Ratatat::Button.new("Nested")
+      modal.mount(container)
+      container.mount(button)
+
+      # Button is child of Container, not Modal directly
+      styles = sheet.compute(button)
+      expect(styles.foreground).to be_nil
+    end
+  end
+
+  describe ":not() selector" do
+    it "excludes matching widgets" do
+      sheet = Ratatat::StyleSheet.new
+      sheet.add_rule("Button:not(.danger)", foreground: :white)
+
+      safe = Ratatat::Button.new("Safe", classes: ["primary"])
+      danger = Ratatat::Button.new("Danger", classes: ["danger"])
+
+      expect(sheet.compute(safe).foreground).to eq(:white)
+      expect(sheet.compute(danger).foreground).to be_nil
+    end
+
+    it "works with id selectors" do
+      sheet = Ratatat::StyleSheet.new
+      sheet.add_rule("Button:not(#skip)", background: :blue)
+
+      normal = Ratatat::Button.new("Normal")
+      skip = Ratatat::Button.new("Skip", id: "skip")
+
+      expect(sheet.compute(normal).background).to eq(:blue)
+      expect(sheet.compute(skip).background).to be_nil
+    end
+  end
+
+  describe "compound selectors" do
+    it "matches type and class" do
+      sheet = Ratatat::StyleSheet.new
+      sheet.add_rule("Button.primary", foreground: :cyan)
+
+      primary_button = Ratatat::Button.new("Primary", classes: ["primary"])
+      plain_button = Ratatat::Button.new("Plain")
+      primary_static = Ratatat::Static.new("Text", classes: ["primary"])
+
+      expect(sheet.compute(primary_button).foreground).to eq(:cyan)
+      expect(sheet.compute(plain_button).foreground).to be_nil
+      expect(sheet.compute(primary_static).foreground).to be_nil
+    end
+
+    it "matches type and id" do
+      sheet = Ratatat::StyleSheet.new
+      sheet.add_rule("Button#submit", background: :green)
+
+      submit = Ratatat::Button.new("Submit", id: "submit")
+      other = Ratatat::Button.new("Other", id: "cancel")
+
+      expect(sheet.compute(submit).background).to eq(:green)
+      expect(sheet.compute(other).background).to be_nil
+    end
+
+    it "matches multiple classes" do
+      sheet = Ratatat::StyleSheet.new
+      sheet.add_rule(".primary.large", bold: true)
+
+      both = Ratatat::Button.new("Both", classes: ["primary", "large"])
+      one = Ratatat::Button.new("One", classes: ["primary"])
+
+      expect(sheet.compute(both).bold).to be true
+      expect(sheet.compute(one).bold).to be_nil
+    end
+  end
 end

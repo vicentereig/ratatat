@@ -210,12 +210,12 @@ RSpec.describe Ratatat::Widget do
 
     it "finds by id" do
       result = @root.query("#c1")
-      expect(result).to eq([@child1])
+      expect(result.to_a).to eq([@child1])
     end
 
     it "finds by class" do
       result = @root.query(".active")
-      expect(result).to contain_exactly(@child1, @grandchild)
+      expect(result.to_a).to contain_exactly(@child1, @grandchild)
     end
 
     it "finds by type" do
@@ -224,7 +224,7 @@ RSpec.describe Ratatat::Widget do
       @root.mount(typed)
 
       result = @root.query(custom_class)
-      expect(result).to eq([typed])
+      expect(result.to_a).to eq([typed])
     end
 
     it "returns empty for no match" do

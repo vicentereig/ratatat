@@ -133,41 +133,80 @@ module Ratatat
     # Returns array of [x, y, cell] for cells that changed.
     #
     # This implements Ratatui's diffing algorithm with multi-width char handling.
+    # Optimized hot path - avoids method calls and type checks in inner loop.
     sig { params(other: Buffer).returns(T::Array[[Integer, Integer, Cell]]) }
     def diff(other)
       raise ArgumentError, "Buffer size mismatch" unless @width == other.width && @height == other.height
 
-      updates = T.let([], T::Array[[Integer, Integer, Cell]])
+      updates = []
       invalidated = 0  # Cells invalidated by previous wide char changing
       to_skip = 0      # Cells to skip (continuation of current wide char)
 
-      @cells.each_with_index do |prev_cell, i|
-        curr_cell = T.must(other.cells[i])
+      # Cache for inner loop
+      prev_cells = @cells
+      curr_cells = other.cells
+      width = @width
+      total = prev_cells.length
 
-        # Determine if we should emit this cell:
-        # 1. Not marked to skip
-        # 2. Either changed OR invalidated by a previous wide char
-        # 3. Not a continuation cell of the current wide char
-        should_emit = !curr_cell.skip &&
-                      (!curr_cell.visually_equal?(prev_cell) || invalidated.positive?) &&
-                      to_skip.zero?
+      x = 0
+      y = 0
+      i = 0
 
-        if should_emit
-          x, y = pos_of(i)
-          updates << [x, y, curr_cell]
+      while i < total
+        prev_cell = prev_cells[i]
+        curr_cell = curr_cells[i]
+
+        # Fast path: check if we should emit this cell
+        # Skip if: marked to skip, is continuation cell, or unchanged and not invalidated
+        unless curr_cell.skip || to_skip > 0
+          # Inline visually_equal? check for speed
+          prev_sym = prev_cell.symbol
+          curr_sym = curr_cell.symbol
+          prev_sym = " " if prev_sym.empty?
+          curr_sym = " " if curr_sym.empty?
+
+          changed = invalidated > 0 ||
+                    prev_sym != curr_sym ||
+                    prev_cell.fg != curr_cell.fg ||
+                    prev_cell.bg != curr_cell.bg ||
+                    prev_cell.modifiers != curr_cell.modifiers
+
+          updates << [x, y, curr_cell] if changed
         end
 
-        # Calculate widths for tracking
-        curr_width = curr_cell.width
-        prev_width = prev_cell.width
+        # Calculate widths for wide char tracking
+        # Fast path: ASCII chars (ord < 128) always have width 1
+        curr_sym = curr_cell.symbol
+        prev_sym = prev_cell.symbol
+        curr_ord = curr_sym.empty? ? 32 : curr_sym.ord
+        prev_ord = prev_sym.empty? ? 32 : prev_sym.ord
 
-        # Track cells to skip (continuation of current wide char)
-        to_skip = [curr_width - 1, 0].max
+        if curr_ord < 128 && prev_ord < 128
+          # ASCII fast path - both width 1, no wide char handling needed
+          to_skip = 0
+          invalidated = invalidated > 0 ? invalidated - 1 : 0
+        else
+          # Wide char path - need actual width calculation
+          curr_width = curr_cell.width
+          prev_width = prev_cell.width
 
-        # Track invalidated cells (when a wide char changes width)
-        affected = [curr_width, prev_width].max
-        invalidated = [affected, invalidated].max - 1
-        invalidated = [invalidated, 0].max
+          # Track cells to skip (continuation of current wide char)
+          to_skip = curr_width > 1 ? curr_width - 1 : 0
+
+          # Track invalidated cells (when a wide char changes width)
+          affected = curr_width > prev_width ? curr_width : prev_width
+          invalidated = invalidated > affected ? invalidated - 1 : affected - 1
+          invalidated = 0 if invalidated < 0
+        end
+
+        # Update position (faster than pos_of)
+        x += 1
+        if x >= width
+          x = 0
+          y += 1
+        end
+
+        i += 1
       end
 
       updates
