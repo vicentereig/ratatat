@@ -3,8 +3,8 @@ require_relative "lib/ratatat/version"
 Gem::Specification.new do |spec|
   spec.name          = "ratatat"
   spec.version       = Ratatat::VERSION
-  spec.authors       = ["Vicente Reig"]
-  spec.email         = ["vicente@vicentereig.com"]
+  spec.authors       = ["Vicente Reig Rincon de Arellano"]
+  spec.email         = ["hey@vicente.services"]
   spec.summary       = "A pure Ruby TUI framework inspired by Textual"
   spec.description   = "Build terminal user interfaces with a reactive, component-based architecture. Features reactive properties, CSS-like styling, message-driven communication, and a rich widget library."
   spec.homepage      = "https://github.com/vicentereig/ratatat"
