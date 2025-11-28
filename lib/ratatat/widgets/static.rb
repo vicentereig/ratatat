@@ -8,9 +8,9 @@ module Ratatat
 
     reactive :text, default: "", repaint: true
 
-    sig { params(text: String, id: T.nilable(String), classes: T::Array[String]).void }
-    def initialize(text = "", id: nil, classes: [])
-      super(id: id, classes: classes)
+    sig { params(text: String, id: T.nilable(String), classes: T::Array[String], styles: T.nilable(T::Hash[Symbol, T.untyped])).void }
+    def initialize(text = "", id: nil, classes: [], styles: nil)
+      super(id: id, classes: classes, styles: styles)
       @text = text
     end
 

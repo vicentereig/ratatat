@@ -25,19 +25,57 @@ module Ratatat
     sig { returns(T::Array[Widget]) }
     attr_reader :children
 
-    sig { params(id: T.nilable(String), classes: T::Array[String], kwargs: T.untyped).void }
-    def initialize(id: nil, classes: [], **kwargs)
+    sig { returns(Styles) }
+    attr_reader :styles
+
+    sig { params(id: T.nilable(String), classes: T::Array[String], styles: T.nilable(T::Hash[Symbol, T.untyped]), kwargs: T.untyped).void }
+    def initialize(id: nil, classes: [], styles: nil, **kwargs)
       @id = id
       @classes = T.let(classes.to_set, T::Set[String])
       @parent = T.let(nil, T.nilable(Widget))
       @children = T.let([], T::Array[Widget])
       @has_focus = T.let(false, T::Boolean)
+      @styles = T.let(styles ? Styles.new(**styles) : Styles.new, Styles)
 
       # Initialize reactive properties from kwargs
       kwargs.each do |key, value|
         setter = :"#{key}="
         send(setter, value) if respond_to?(setter)
       end
+    end
+
+    # Class management
+    sig { params(name: String).void }
+    def add_class(name)
+      @classes.add(name)
+    end
+
+    sig { params(name: String).void }
+    def remove_class(name)
+      @classes.delete(name)
+    end
+
+    sig { params(name: String).void }
+    def toggle_class(name)
+      if @classes.include?(name)
+        @classes.delete(name)
+      else
+        @classes.add(name)
+      end
+    end
+
+    sig { params(condition: T::Boolean, name: String).void }
+    def set_class(condition, name)
+      if condition
+        @classes.add(name)
+      else
+        @classes.delete(name)
+      end
+    end
+
+    sig { params(name: String).returns(T::Boolean) }
+    def has_class?(name)
+      @classes.include?(name)
     end
 
     # Trigger repaint (override in subclass or App)

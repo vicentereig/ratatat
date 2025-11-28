@@ -15,6 +15,7 @@ require_relative "ratatat/driver"
 require_relative "ratatat/message"
 require_relative "ratatat/binding"
 require_relative "ratatat/reactive"
+require_relative "ratatat/styles"
 require_relative "ratatat/widget"
 
 # Application framework
