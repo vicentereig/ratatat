@@ -798,6 +798,63 @@ Recommended order based on dependencies:
 | 9. Async | Done (timers + workers) | 2025-11-28 | 2025-11-28 |
 | 10. Queries | Done | 2025-11-27 | 2025-11-27 |
 
+### Implemented Features (275 tests)
+
+**Core Framework:**
+- Message system with bubbling (Key, Resize, Quit, Focus, Blur, Worker::Done)
+- Widget tree (mount, remove, ancestors, query)
+- Focus system (can_focus?, focus, blur, Tab/Shift+Tab navigation)
+- Lifecycle hooks (on_mount, on_unmount, on_focus, on_blur)
+- Key bindings (BINDINGS constant → action_* methods)
+- Reactive properties (`reactive :name, default:, repaint:`)
+- Composition (`compose` returns children, `recompose`)
+- Async (set_timer, set_interval, cancel_timer, call_later)
+- Background workers (run_worker, cancel_worker, Worker::Done)
+
+**Styling:**
+- Styles class with properties (foreground, background, width, height, padding, bold, etc.)
+- StyleSheet with rules and selectors (type, #id, .class)
+- Pseudo-classes (:focus, :disabled, :hover)
+- CSSParser.parse(css) and CSSParser.parse_file(path)
+- App CSS/CSS_PATH constants
+- Class management (add_class, remove_class, toggle_class, has_class?)
+
+**Widgets:**
+- Static, Button, TextInput (core)
+- Checkbox, Switch (toggles)
+- Select, SelectionList (dropdowns)
+- DataTable (tabular data)
+- Tree, TreeNode (hierarchies)
+- ProgressBar, Spinner (progress)
+- Modal (dialogs)
+- Container, Horizontal, Vertical (layout)
+
+### Not Yet Implemented
+
+**Widgets:**
+- TextArea (multi-line input)
+- RadioSet (exclusive selection)
+- Sparkline (inline chart)
+- Log (scrolling log viewer)
+- Grid (grid layout)
+- ScrollableContainer (scrollable viewport)
+- TabbedContent (tabbed panels)
+- Toast/Notification (temporary messages)
+- Tooltip (contextual help)
+
+**Styling:**
+- CSS combinators: descendant (`A B`), child (`A > B`)
+- `:not()` negation
+
+**Queries:**
+- Compound selectors (`Button.primary`)
+- DOMQuery object with filter/exclude
+- Bulk operations on query results
+
+**Other:**
+- Multi-width character support (emoji, CJK)
+- call_after_refresh(&block)
+
 ---
 
 ## Design Notes
