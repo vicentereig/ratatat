@@ -16,6 +16,7 @@ require_relative "ratatat/message"
 require_relative "ratatat/binding"
 require_relative "ratatat/reactive"
 require_relative "ratatat/styles"
+require_relative "ratatat/css_parser"
 require_relative "ratatat/widget"
 
 # Application framework
@@ -26,6 +27,12 @@ require_relative "ratatat/widgets/static"
 require_relative "ratatat/widgets/button"
 require_relative "ratatat/widgets/text_input"
 require_relative "ratatat/widgets/container"
+require_relative "ratatat/widgets/checkbox"
+require_relative "ratatat/widgets/select"
+require_relative "ratatat/widgets/data_table"
+require_relative "ratatat/widgets/tree"
+require_relative "ratatat/widgets/progress_bar"
+require_relative "ratatat/widgets/modal"
 
 module Ratatat
 end

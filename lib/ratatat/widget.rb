@@ -78,6 +78,10 @@ module Ratatat
       @classes.include?(name)
     end
 
+    # Reactive state for pseudo-classes
+    reactive :disabled, default: false, repaint: true
+    reactive :hover, default: false, repaint: true
+
     # Trigger repaint (override in subclass or App)
     sig { void }
     def refresh

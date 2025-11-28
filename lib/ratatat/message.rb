@@ -119,4 +119,29 @@ module Ratatat
       super(sender: sender, bubble: false)
     end
   end
+
+  # Worker namespace for background task messages
+  module Worker
+    # Worker completed message
+    class Done < Message
+      extend T::Sig
+
+      sig { returns(Symbol) }
+      attr_reader :name
+
+      sig { returns(T.untyped) }
+      attr_reader :result
+
+      sig { returns(T.nilable(Exception)) }
+      attr_reader :error
+
+      sig { params(sender: T.untyped, name: Symbol, result: T.untyped, error: T.nilable(Exception)).void }
+      def initialize(sender:, name:, result: nil, error: nil)
+        super(sender: sender, bubble: true)
+        @name = name
+        @result = result
+        @error = error
+      end
+    end
+  end
 end

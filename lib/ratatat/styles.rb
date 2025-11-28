@@ -98,25 +98,56 @@ module Ratatat
 
     sig { params(selector: String).returns(Integer) }
     def compute_specificity(selector)
-      # ID = 100, class = 10, type = 1
-      if selector.start_with?("#")
-        100
-      elsif selector.start_with?(".")
-        10
+      # Parse selector and pseudo-class
+      base, pseudo = parse_selector(selector)
+
+      # ID = 100, class = 10, type = 1, pseudo-class = 10
+      specificity = 0
+      specificity += 100 if base.start_with?("#")
+      specificity += 10 if base.start_with?(".")
+      specificity += 1 unless base.start_with?("#") || base.start_with?(".")
+      specificity += 10 if pseudo
+      specificity
+    end
+
+    sig { params(selector: String).returns([String, T.nilable(String)]) }
+    def parse_selector(selector)
+      if selector.include?(":")
+        parts = selector.split(":", 2)
+        [parts[0], parts[1]]
       else
-        1
+        [selector, nil]
       end
     end
 
     sig { params(widget: Widget, selector: String).returns(T::Boolean) }
     def matches?(widget, selector)
-      if selector.start_with?("#")
-        widget.id == selector[1..]
-      elsif selector.start_with?(".")
-        widget.classes.include?(selector[1..])
+      base, pseudo = parse_selector(selector)
+
+      # Check base selector
+      base_matches = if base.start_with?("#")
+                       widget.id == base[1..]
+                     elsif base.start_with?(".")
+                       widget.classes.include?(base[1..])
+                     else
+                       # Type selector - match class name
+                       widget.class.name&.split("::")&.last == base
+                     end
+
+      return false unless base_matches
+
+      # Check pseudo-class if present
+      return true unless pseudo
+
+      case pseudo
+      when "focus"
+        widget.has_focus?
+      when "disabled"
+        widget.disabled == true
+      when "hover"
+        widget.hover == true
       else
-        # Type selector - match class name
-        widget.class.name&.split("::")&.last == selector
+        false
       end
     end
   end

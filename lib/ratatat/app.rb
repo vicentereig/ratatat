@@ -19,6 +19,9 @@ module Ratatat
     sig { returns(T.nilable(Widget)) }
     attr_reader :focused
 
+    sig { returns(StyleSheet) }
+    attr_reader :stylesheet
+
     sig { params(id: T.nilable(String), classes: T::Array[String]).void }
     def initialize(id: nil, classes: [])
       super
@@ -30,7 +33,28 @@ module Ratatat
       @timers = T.let({}, T::Hash[Integer, T::Hash[Symbol, T.untyped]])
       @timer_id = T.let(0, Integer)
       @deferred = T.let([], T::Array[T.proc.void])
+      @stylesheet = T.let(load_stylesheet, StyleSheet)
+      @workers = T.let({}, T::Hash[Symbol, Thread])
+      @worker_results = T.let([], T::Array[Worker::Done])
+      @worker_mutex = T.let(Mutex.new, Mutex)
     end
+
+    private
+
+    sig { returns(StyleSheet) }
+    def load_stylesheet
+      if self.class.const_defined?(:CSS, false)
+        css = self.class.const_get(:CSS, false)
+        CSSParser.parse(css)
+      elsif self.class.const_defined?(:CSS_PATH, false)
+        path = self.class.const_get(:CSS_PATH, false)
+        CSSParser.parse_file(path)
+      else
+        StyleSheet.new
+      end
+    end
+
+    public
 
     sig { returns(T::Boolean) }
     def running?
@@ -155,6 +179,49 @@ module Ratatat
       end
     end
 
+    # Run a block in a background thread
+    sig { params(name: Symbol, block: T.proc.returns(T.untyped)).void }
+    def run_worker(name, &block)
+      @workers[name] = Thread.new do
+        result = nil
+        error = nil
+        begin
+          result = block.call
+        rescue StandardError => e
+          error = e
+        end
+
+        # Only post result if not cancelled
+        @worker_mutex.synchronize do
+          if @workers.key?(name)
+            @worker_results << Worker::Done.new(sender: self, name: name, result: result, error: error)
+            @workers.delete(name)
+          end
+        end
+      end
+    end
+
+    # Cancel a running worker
+    sig { params(name: Symbol).void }
+    def cancel_worker(name)
+      @worker_mutex.synchronize do
+        thread = @workers.delete(name)
+        thread&.kill
+      end
+    end
+
+    # Process completed workers and post their messages
+    sig { void }
+    def process_workers
+      results = @worker_mutex.synchronize do
+        pending = @worker_results.dup
+        @worker_results.clear
+        pending
+      end
+
+      results.each { |msg| post(msg) }
+    end
+
     # Main event loop
     sig { params(poll_interval: Float).void }
     def run(poll_interval: 0.05)
@@ -168,6 +235,7 @@ module Ratatat
           poll_input
           process_messages
           process_timers
+          process_workers
           render_frame
           sleep(poll_interval)
         end
