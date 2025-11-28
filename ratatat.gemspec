@@ -12,15 +12,17 @@ Gem::Specification.new do |spec|
   spec.files         = Dir["lib/**/*", "examples/**/*", "README.md"]
   spec.require_paths = ["lib"]
 
+  spec.required_ruby_version = ">= 3.1"
+
   spec.metadata = {
     "homepage_uri" => spec.homepage,
-    "source_code_uri" => "https://github.com/vicentereig/ratatat",
+    "source_code_uri" => spec.homepage,
     "documentation_uri" => "https://github.com/vicentereig/ratatat#readme"
   }
 
-  spec.add_runtime_dependency "sorbet-runtime", ">= 0.5"
+  spec.add_runtime_dependency "sorbet-runtime", "~> 0.5"
 
-  spec.add_development_dependency "rspec", ">= 3.12"
-  spec.add_development_dependency "sorbet", ">= 0.5"
-  spec.add_development_dependency "tapioca", ">= 0.11"
+  spec.add_development_dependency "rspec", "~> 3.12"
+  spec.add_development_dependency "sorbet", "~> 0.5"
+  spec.add_development_dependency "tapioca", "~> 0.11"
 end
