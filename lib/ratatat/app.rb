@@ -27,6 +27,9 @@ module Ratatat
       @terminal = T.let(nil, T.nilable(Terminal))
       @input = T.let(nil, T.nilable(Input))
       @focused = T.let(nil, T.nilable(Widget))
+      @timers = T.let({}, T::Hash[Integer, T::Hash[Symbol, T.untyped]])
+      @timer_id = T.let(0, Integer)
+      @deferred = T.let([], T::Array[T.proc.void])
     end
 
     sig { returns(T::Boolean) }
@@ -100,6 +103,58 @@ module Ratatat
     end
     alias action_focus_previous focus_previous
 
+    # Schedule a one-shot timer
+    sig { params(delay: Numeric, block: T.proc.void).returns(Integer) }
+    def set_timer(delay, &block)
+      id = next_timer_id
+      @timers[id] = { at: Time.now + delay, block: block, repeat: false }
+      id
+    end
+
+    # Schedule a repeating timer
+    sig { params(period: Numeric, block: T.proc.void).returns(Integer) }
+    def set_interval(period, &block)
+      id = next_timer_id
+      @timers[id] = { at: Time.now + period, block: block, repeat: true, period: period }
+      id
+    end
+
+    # Cancel a timer
+    sig { params(id: Integer).void }
+    def cancel_timer(id)
+      @timers.delete(id)
+    end
+
+    # Schedule callback for next tick
+    sig { params(block: T.proc.void).void }
+    def call_later(&block)
+      @deferred << block
+    end
+
+    # Process timers and deferred callbacks
+    sig { void }
+    def process_timers
+      now = Time.now
+
+      # Process deferred first
+      pending = @deferred.dup
+      @deferred.clear
+      pending.each(&:call)
+
+      # Process timers
+      @timers.each do |id, timer|
+        next if timer[:at] > now
+
+        timer[:block].call
+
+        if timer[:repeat]
+          timer[:at] = now + timer[:period]
+        else
+          @timers.delete(id)
+        end
+      end
+    end
+
     # Main event loop
     sig { params(poll_interval: Float).void }
     def run(poll_interval: 0.05)
@@ -112,6 +167,7 @@ module Ratatat
         while @running
           poll_input
           process_messages
+          process_timers
           render_frame
           sleep(poll_interval)
         end
@@ -121,6 +177,11 @@ module Ratatat
     end
 
     private
+
+    sig { returns(Integer) }
+    def next_timer_id
+      @timer_id += 1
+    end
 
     sig { void }
     def poll_input
