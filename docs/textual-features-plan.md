@@ -793,9 +793,9 @@ Recommended order based on dependencies:
 | 4. Key Bindings | Done | 2025-11-27 | 2025-11-27 |
 | 5. Reactive | Done | 2025-11-27 | 2025-11-27 |
 | 6. Composition | Done | 2025-11-27 | 2025-11-27 |
-| 7. Styling | Done | 2025-11-28 | 2025-11-28 |
-| 8. Widget Library | Done (core) | 2025-11-28 | 2025-11-28 |
-| 9. Async | Done | 2025-11-28 | 2025-11-28 |
+| 7. Styling | Done (CSS parser, pseudo-classes) | 2025-11-28 | 2025-11-28 |
+| 8. Widget Library | Done (full) | 2025-11-28 | 2025-11-28 |
+| 9. Async | Done (timers + workers) | 2025-11-28 | 2025-11-28 |
 | 10. Queries | Done | 2025-11-27 | 2025-11-27 |
 
 ---
